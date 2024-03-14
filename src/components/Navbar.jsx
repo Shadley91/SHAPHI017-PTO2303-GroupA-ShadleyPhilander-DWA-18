@@ -1,14 +1,40 @@
+import {
+  AppBar,
+  IconButton,
+  Toolbar,
+  Typography,
+  Box,
+  Button,
+} from "@mui/material";
+import MicIcon from "@mui/icons-material/Mic";
+import SearchIcon from "@mui/icons-material/Search";
+
 export default function Navbar() {
   return (
-    <nav>
-      <img src="./src/images/morpheus.png" className="nav--logo" />
-      <h2>Podcast Pharmacy</h2>
-      <h2>
-        <p>Get your daily dose!</p>
-      </h2>
-      <button className="browse--btn">Browse</button>
-      <button className="favourites--btn">Favourites</button>
-      <button className="search--btn">Search</button>
-    </nav>
+    <AppBar position="static">
+      <Toolbar>
+        <IconButton size="large" edge="start" color="inherit" aria-label="logo">
+          <MicIcon />
+        </IconButton>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          Podcast App
+        </Typography>
+        <Box>
+          <Button color="inherit">Home</Button>
+          <Button color="inherit">Browse</Button>
+          <Button color="inherit">Favourites</Button>
+
+          <IconButton
+            size="large"
+            edge="start"
+            color="inherit"
+            aria-label="logo"
+          >
+            <SearchIcon />
+          </IconButton>
+          <Button color="inherit">Login</Button>
+        </Box>
+      </Toolbar>
+    </AppBar>
   );
 }
