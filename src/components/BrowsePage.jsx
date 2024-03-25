@@ -82,8 +82,9 @@ const BrowsePage = () => {
         {filteredShows.map((show) => (
           <div key={show.id}>
             <img
-              src={`https://podcast-api.netlify.app/${show.previewImage}`}
-              alt={show.title}
+              src={show.image}
+              alt={show.name}
+              style={{ maxWidth: "200px" }}
             />
             <h2>{show.title}</h2>
             <p>Seasons: {show.seasons.length}</p>{" "}

@@ -15,6 +15,7 @@ function App() {
   return (
     <Router>
       <div>
+        {/* <AudioPlayer />  */}
         <Navbar />
         <Routes>
           <Route path="/" element={<Outlet />}>
@@ -22,11 +23,6 @@ function App() {
             <Route path="/browse/:id" element={<BrowsePage />} />
             <Route path="/favourites" element={<FavouritesPage />} />
           </Route>
-          {/* <LandingPage />
-          <AudioPlayer /> */}
-          {/* <Loading /> */}
-          {/* <BrowsePage />
-          <FavouritesPage /> */}
         </Routes>
       </div>
     </Router>
