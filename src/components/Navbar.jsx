@@ -8,8 +8,16 @@ import {
 } from "@mui/material";
 import MicIcon from "@mui/icons-material/Mic";
 import SearchIcon from "@mui/icons-material/Search";
+import { useNavigate } from "react-router-dom";
 
 export default function Navbar() {
+  const navigate = useNavigate();
+  const handleBrowsingPage = () => {
+    navigate("/browse/:id");
+  };
+  const handleFavouritesPage = () => {
+    navigate("/favourites");
+  };
   return (
     <AppBar position="static">
       <Toolbar>
@@ -21,8 +29,12 @@ export default function Navbar() {
         </Typography>
         <Box>
           <Button color="inherit">Home</Button>
-          <Button color="inherit">Browse</Button>
-          <Button color="inherit">Favourites</Button>
+          <Button color="inherit" onClick={handleBrowsingPage}>
+            Browse
+          </Button>
+          <Button color="inherit" onClick={handleFavouritesPage}>
+            Favourites
+          </Button>
 
           <IconButton
             size="large"

@@ -1,12 +1,36 @@
+// import AudioPlayer from "./components/AudioPlayer";
+import BrowsePage from "./components/BrowsePage";
+import FavouritesPage from "./components/FavouritesPage";
 import LandingPage from "./components/LandingPage";
 import Navbar from "./components/Navbar";
-import "./style.css";
+// import Loading from "./components/Loading";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Outlet,
+} from "react-router-dom";
 
-export default function App() {
+function App() {
   return (
-    <div className="container">
-      <Navbar />
-      <LandingPage />
-    </div>
+    <Router>
+      <div>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Outlet />}>
+            <Route index element={<LandingPage />} />
+            <Route path="/browse/:id" element={<BrowsePage />} />
+            <Route path="/favourites" element={<FavouritesPage />} />
+          </Route>
+          {/* <LandingPage />
+          <AudioPlayer /> */}
+          {/* <Loading /> */}
+          {/* <BrowsePage />
+          <FavouritesPage /> */}
+        </Routes>
+      </div>
+    </Router>
   );
 }
+
+export default App;
