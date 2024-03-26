@@ -1,12 +1,23 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import moment from "moment"; // Import Moment.js
+import moment from "moment";
+import {
+  Button,
+  IconButton,
+  createTheme,
+  ThemeProvider,
+  Typography,
+  MenuItem,
+  Select,
+} from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 const BrowsePage = () => {
   const [shows, setShows] = useState([]);
   const [filteredShows, setFilteredShows] = useState([]);
   const [sortBy, setSortBy] = useState("title");
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeGenre, setActiveGenre] = useState(null);
 
   const Navigate = useNavigate();
   const handleBackButton = () => {
@@ -14,7 +25,6 @@ const BrowsePage = () => {
   };
 
   useEffect(() => {
-    // Fetch data from the API
     fetch("https://podcast-api.netlify.app/shows")
       .then((response) => response.json())
       .then((data) => {
@@ -42,7 +52,7 @@ const BrowsePage = () => {
       if (sortBy === "title") {
         return a.title.localeCompare(b.title);
       } else if (sortBy === "-title") {
-        return b.title.localeCompare(a.title); // Sort in descending order
+        return b.title.localeCompare(a.title);
       } else if (sortBy === "lastUpdated") {
         return (
           moment(a.lastUpdated).valueOf() - moment(b.lastUpdated).valueOf()
@@ -50,7 +60,7 @@ const BrowsePage = () => {
       } else if (sortBy === "-lastUpdated") {
         return (
           moment(b.lastUpdated).valueOf() - moment(a.lastUpdated).valueOf()
-        ); // Sort in descending order
+        );
       }
     });
     setFilteredShows(sortedShows);
@@ -74,58 +84,136 @@ const BrowsePage = () => {
     if (!isAlreadyFavorite) {
       const newFavorites = [...existingFavorites, show];
       localStorage.setItem("favorites", JSON.stringify(newFavorites));
-      console.log("Favorites after adding:", newFavorites); // Log the favorites
+      console.log("Favorites after adding:", newFavorites);
     }
   };
 
+  const filterByGenre = (genreId) => {
+    setActiveGenre(genreId);
+    if (genreId === null) {
+      setFilteredShows(shows);
+    } else {
+      const filtered = shows.filter((show) => show.genres.includes(genreId));
+      setFilteredShows(filtered);
+    }
+  };
+
+  // Define a custom theme for Material-UI with Roboto font
+  const theme = createTheme({
+    typography: {
+      fontFamily: "Roboto, sans-serif",
+    },
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            "&:hover": {
+              boxShadow: "0 0 10px rgba(0, 0, 255, 0.5)",
+            },
+            margin: "0 5px", // Added margin for spacing
+          },
+        },
+        variants: {
+          outlined: {
+            color: "white",
+          },
+        },
+      },
+      MuiSelect: {
+        styleOverrides: {
+          select: {
+            color: "white",
+          },
+        },
+      },
+      MuiMenuItem: {
+        styleOverrides: {
+          root: {
+            color: "black",
+          },
+        },
+      },
+    },
+  });
+
   return (
-    <div>
-      <button onClick={handleBackButton}>Back</button>
-      <h1>Browse Shows</h1>
+    <ThemeProvider theme={theme}>
       <div>
-        <input
-          type="text"
-          placeholder="Search by title"
-          value={searchTerm}
-          onChange={handleSearch}
-        />
-        <select
-          value={sortBy}
-          onChange={(e) => handleSortChange(e.target.value)}
-        >
-          <option value="title">Sort by Title (A-Z)</option>
-          <option value="-title">Sort by Title (Z-A)</option>
-          <option value="lastUpdated">Sort by Date Updated (Ascending)</option>
-          <option value="-lastUpdated">
-            Sort by Date Updated (Descending)
-          </option>
-        </select>
-      </div>
-      <div>
-        {filteredShows.map((show) => (
-          <div key={show.id}>
-            <img
-              src={show.image}
-              alt={show.name}
-              style={{ maxWidth: "200px" }}
-            />
-            <h2>{show.title}</h2>
-            <p>Seasons: {show.seasons.length}</p>{" "}
-            {/* Display number of seasons */}
-            <p>Last Updated: {moment(show.lastUpdated).format("LL")}</p>
-            {/* Display last updated date */}
-            <p>
-              Genres:{" "}
-              {show.genres.map((genreId) => genreMap[genreId]).join(", ")}
-            </p>
-            <button onClick={() => addToFavorites(show)}>
-              Add to Favorites
-            </button>
-            {/* Add other show details and functionalities */}
+        <IconButton onClick={handleBackButton} aria-label="back">
+          <ArrowBackIcon />
+        </IconButton>
+        <h1>Browse Shows</h1>
+        <div>
+          <input
+            type="text"
+            placeholder="Search by title"
+            value={searchTerm}
+            onChange={handleSearch}
+          />
+          <Select
+            value={sortBy}
+            onChange={(e) => handleSortChange(e.target.value)}
+            sx={{ color: "white" }} // Changing text color to white
+          >
+            <MenuItem value="title">Sort by Title (A-Z)</MenuItem>
+            <MenuItem value="-title">Sort by Title (Z-A)</MenuItem>
+            <MenuItem value="lastUpdated">
+              Sort by Date Updated (Ascending)
+            </MenuItem>
+            <MenuItem value="-lastUpdated">
+              Sort by Date Updated (Descending)
+            </MenuItem>
+          </Select>
+        </div>
+        <div>
+          <div>
+            <Button
+              variant="text"
+              color="primary"
+              onClick={() => filterByGenre(null)}
+              className={activeGenre === null ? "active" : ""}
+            >
+              All
+            </Button>
+            {Object.entries(genreMap).map(([id, name]) => (
+              <Button
+                key={id}
+                variant="text"
+                color="primary"
+                onClick={() => filterByGenre(parseInt(id))}
+                className={activeGenre === parseInt(id) ? "active" : ""}
+                sx={{ margin: "0 5px" }} // Adding spacing between buttons
+              >
+                <Typography variant="button">{name}</Typography>
+              </Button>
+            ))}
           </div>
-        ))}
+          {filteredShows.map((show) => (
+            <div key={show.id}>
+              <img
+                src={show.image}
+                alt={show.name}
+                style={{ maxWidth: "200px" }}
+              />
+              <h2>{show.title}</h2>
+              <p>Seasons: {show.seasons.length}</p>{" "}
+              <p>Last Updated: {moment(show.lastUpdated).format("LL")}</p>
+              <p>
+                Genres:{" "}
+                {show.genres.map((genreId) => genreMap[genreId]).join(", ")}
+              </p>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => addToFavorites(show)}
+              >
+                Add to Favorites
+              </Button>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </ThemeProvider>
   );
 };
 

@@ -1,15 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
-// import { useNavigate } from "react-router-dom";
+import Button from "@mui/material/Button";
 
 function LandingPage() {
   const [shows, setShows] = useState([]);
   const [selectedShow, setSelectedShow] = useState(null);
   const [loadingInitialData, setLoadingInitialData] = useState(true);
   const [loadingNewData, setLoadingNewData] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage] = useState(5); // Number of items per page
 
-  // const navigate = useNavigate();
-
-  // Memoized genre mapping
   const genreMapping = useMemo(
     () => ({
       1: "Personal Growth",
@@ -25,7 +24,6 @@ function LandingPage() {
     []
   );
 
-  // Fetch all shows
   useEffect(() => {
     fetch("https://podcast-api.netlify.app/shows")
       .then((response) => response.json())
@@ -36,7 +34,7 @@ function LandingPage() {
             name: preview.title,
             image: preview.image,
             description: preview.description,
-            genres: preview.genres.map((genreId) => genreMapping[genreId]), // Map genre IDs to titles
+            genres: preview.genres.map((genreId) => genreMapping[genreId]),
           }))
         );
         setLoadingInitialData(false);
@@ -44,7 +42,6 @@ function LandingPage() {
       .catch((error) => console.error("Error fetching shows:", error));
   }, [genreMapping]);
 
-  // Function to fetch data for a specific show
   const fetchShowData = (showId) => {
     setLoadingNewData(true);
     fetch(`https://podcast-api.netlify.app/id/${showId}`)
@@ -55,9 +52,9 @@ function LandingPage() {
           name: data.title,
           image: data.image,
           description: data.description,
-          seasons: data.seasons.sort((a, b) => a.number - b.number), // Sort seasons by number
+          seasons: data.seasons.sort((a, b) => a.number - b.number),
           episodes: data.episodes,
-          genres: data.genres.map((genreId) => genreMapping[genreId]), // Map genre IDs to titles
+          genres: data.genres.map((genreId) => genreMapping[genreId]),
         });
         setLoadingNewData(false);
       })
@@ -66,7 +63,14 @@ function LandingPage() {
       );
   };
 
-  // Render loading state while initial data is being loaded
+  // Logic for pagination
+  const indexOfLastShow = currentPage * perPage;
+  const indexOfFirstShow = indexOfLastShow - perPage;
+  const currentShows = shows.slice(indexOfFirstShow, indexOfLastShow);
+
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   if (loadingInitialData) {
     return <div>Loading initial data...</div>;
   }
@@ -75,22 +79,52 @@ function LandingPage() {
     <div>
       <h1>All Shows</h1>
       <ul>
-        {shows.map((show) => (
+        {currentShows.map((show) => (
           <li key={show.id}>
             <div>
               <h3>{show.name}</h3>
               <p>{show.description}</p>
               <p>Genres: {show.genres.join(", ")}</p>
-              <img
-                src={show.image}
-                alt={show.name}
-                style={{ maxWidth: "200px" }}
-              />
-              <button onClick={() => fetchShowData(show.id)}>View</button>
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <img
+                  src={show.image}
+                  alt={show.name}
+                  style={{ maxWidth: "200px" }}
+                />
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => fetchShowData(show.id)}
+                  style={{ marginLeft: "10px" }}
+                >
+                  View
+                </Button>
+              </div>
             </div>
           </li>
         ))}
       </ul>
+
+      {/* Pagination */}
+      <div
+        style={{ display: "flex", justifyContent: "center", margin: "20px 0" }}
+      >
+        <Button
+          variant="contained"
+          disabled={currentPage === 1}
+          onClick={() => paginate(currentPage - 1)}
+          style={{ marginRight: "10px" }}
+        >
+          Previous
+        </Button>
+        <Button
+          variant="contained"
+          disabled={indexOfLastShow >= shows.length}
+          onClick={() => paginate(currentPage + 1)}
+        >
+          Next
+        </Button>
+      </div>
 
       {loadingNewData && <div>Loading new data...</div>}
 
@@ -104,7 +138,6 @@ function LandingPage() {
           />
           <p>{selectedShow.description}</p>
           <p>Genres: {selectedShow.genres.join(", ")}</p>
-          {/* Render additional details of the selected show */}
           <h3>Seasons</h3>
           <ul>
             {selectedShow.seasons.map((season, index) => (

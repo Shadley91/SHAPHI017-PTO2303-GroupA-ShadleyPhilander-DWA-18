@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import IconButton from "@mui/material/IconButton";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import Button from "@mui/material/Button";
+import Grid from "@mui/material/Grid";
 
 const FavouritesPage = () => {
   const [favourites, setFavourites] = useState([]);
@@ -32,6 +36,7 @@ const FavouritesPage = () => {
         setGenreMapping(mapping);
       } catch (error) {
         console.error("Error fetching genre mapping:", error);
+        // Handle the error gracefully, such as displaying a message to the user
       }
     };
 
@@ -71,12 +76,36 @@ const FavouritesPage = () => {
 
   return (
     <div>
-      <button onClick={handleFavouritesBackButton}>Back</button>
+      <IconButton
+        onClick={handleFavouritesBackButton}
+        color="primary"
+        aria-label="back"
+      >
+        <ArrowBackIcon />
+      </IconButton>
       <h1>Favourites</h1>
-      <button onClick={sortByShowAZ}>Sort by Show A-Z</button>
-      <button onClick={sortByShowZA}>Sort by Show Z-A</button>
-      <button onClick={sortByDateAsc}>Sort by Date Ascending</button>
-      <button onClick={sortByDateDesc}>Sort by Date Descending</button>
+      <Grid container spacing={2}>
+        <Grid item>
+          <Button onClick={sortByShowAZ} variant="contained" color="primary">
+            Sort by Show A-Z
+          </Button>
+        </Grid>
+        <Grid item>
+          <Button onClick={sortByShowZA} variant="contained" color="primary">
+            Sort by Show Z-A
+          </Button>
+        </Grid>
+        <Grid item>
+          <Button onClick={sortByDateAsc} variant="contained" color="primary">
+            Sort by Date Ascending
+          </Button>
+        </Grid>
+        <Grid item>
+          <Button onClick={sortByDateDesc} variant="contained" color="primary">
+            Sort by Date Descending
+          </Button>
+        </Grid>
+      </Grid>
       {favourites.map((favourite) => (
         <div key={favourite.id}>
           <p>
@@ -85,9 +114,13 @@ const FavouritesPage = () => {
           </p>
           <p>Genre: {genreMapping[favourite.genreId]}</p>
           <p>Date and Time Added: {favourite.dateTimeAdded.toString()}</p>
-          <button onClick={() => removeFavourite(favourite.id)}>
+          <Button
+            onClick={() => removeFavourite(favourite.id)}
+            variant="contained"
+            color="primary"
+          >
             Remove from favourites
-          </button>
+          </Button>
         </div>
       ))}
     </div>
