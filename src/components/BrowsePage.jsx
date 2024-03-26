@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import moment from "moment"; // Import Moment.js
 
 const BrowsePage = () => {
   const [shows, setShows] = useState([]);
@@ -40,8 +41,16 @@ const BrowsePage = () => {
     const sortedShows = [...filteredShows].sort((a, b) => {
       if (sortBy === "title") {
         return a.title.localeCompare(b.title);
+      } else if (sortBy === "-title") {
+        return b.title.localeCompare(a.title); // Sort in descending order
       } else if (sortBy === "lastUpdated") {
-        return new Date(a.lastUpdated) - new Date(b.lastUpdated);
+        return (
+          moment(a.lastUpdated).valueOf() - moment(b.lastUpdated).valueOf()
+        );
+      } else if (sortBy === "-lastUpdated") {
+        return (
+          moment(b.lastUpdated).valueOf() - moment(a.lastUpdated).valueOf()
+        ); // Sort in descending order
       }
     });
     setFilteredShows(sortedShows);
@@ -53,6 +62,20 @@ const BrowsePage = () => {
       show.title.toLowerCase().includes(event.target.value.toLowerCase())
     );
     setFilteredShows(filtered);
+  };
+
+  const addToFavorites = (show) => {
+    const existingFavorites =
+      JSON.parse(localStorage.getItem("favorites")) || [];
+    const isAlreadyFavorite = existingFavorites.some(
+      (favorite) => favorite.id === show.id
+    );
+
+    if (!isAlreadyFavorite) {
+      const newFavorites = [...existingFavorites, show];
+      localStorage.setItem("favorites", JSON.stringify(newFavorites));
+      console.log("Favorites after adding:", newFavorites); // Log the favorites
+    }
   };
 
   return (
@@ -89,13 +112,15 @@ const BrowsePage = () => {
             <h2>{show.title}</h2>
             <p>Seasons: {show.seasons.length}</p>{" "}
             {/* Display number of seasons */}
-            <p>
-              Last Updated: {new Date(show.lastUpdated).toLocaleDateString()}
-            </p>
+            <p>Last Updated: {moment(show.lastUpdated).format("LL")}</p>
+            {/* Display last updated date */}
             <p>
               Genres:{" "}
               {show.genres.map((genreId) => genreMap[genreId]).join(", ")}
             </p>
+            <button onClick={() => addToFavorites(show)}>
+              Add to Favorites
+            </button>
             {/* Add other show details and functionalities */}
           </div>
         ))}
