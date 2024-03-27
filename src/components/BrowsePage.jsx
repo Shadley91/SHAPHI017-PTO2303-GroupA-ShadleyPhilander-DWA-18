@@ -98,6 +98,28 @@ const BrowsePage = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchSeasonsCount = async () => {
+      const showsWithSeasons = await Promise.all(
+        shows.map(async (show) => {
+          const response = await fetch(
+            `https://podcast-api.netlify.app/id/${show.id}`
+          );
+          const data = await response.json();
+          return {
+            ...show,
+            seasons: data.seasons.length, // Extract season count
+            selectedSeason: 1, // Initialize selectedSeason to 1
+          };
+        })
+      );
+      setShows(showsWithSeasons);
+      setFilteredShows(showsWithSeasons);
+    };
+
+    fetchSeasonsCount();
+  }, [shows]);
+
   // Define a custom theme for Material-UI with Roboto font
   const theme = createTheme({
     typography: {
@@ -196,7 +218,34 @@ const BrowsePage = () => {
                 style={{ maxWidth: "200px" }}
               />
               <h2>{show.title}</h2>
-              <p>Seasons: {show.seasons.length}</p>{" "}
+              {show.seasons > 1 && (
+                <div>
+                  <label htmlFor={`season-dropdown-${show.id}`}>
+                    Select Season:
+                  </label>
+                  <Select
+                    id={`season-dropdown-${show.id}`}
+                    value={show.selectedSeason || 1}
+                    onChange={(e) => {
+                      const selectedSeason = parseInt(e.target.value);
+                      const updatedShows = filteredShows.map((s) =>
+                        s.id === show.id ? { ...s, selectedSeason } : s
+                      );
+                      setFilteredShows(updatedShows);
+                    }}
+                  >
+                    {[...Array(show.seasons).keys()].map((season) => (
+                      <MenuItem key={season + 1} value={season + 1}>
+                        Season {season + 1}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <span style={{ marginLeft: "8px" }}>
+                    Selected: Season {show.selectedSeason || 1}
+                  </span>
+                </div>
+              )}
+              <p>Seasons: {show.seasons}</p>{" "}
               <p>Last Updated: {moment(show.lastUpdated).format("LL")}</p>
               <p>
                 Genres:{" "}
