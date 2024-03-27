@@ -18,20 +18,24 @@ const BrowsePage = () => {
   const [sortBy, setSortBy] = useState("title");
   const [searchTerm, setSearchTerm] = useState("");
   const [activeGenre, setActiveGenre] = useState(null);
-
   const Navigate = useNavigate();
+
   const handleBackButton = () => {
     Navigate("/");
   };
 
   useEffect(() => {
-    fetch("https://podcast-api.netlify.app/shows")
-      .then((response) => response.json())
-      .then((data) => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("https://podcast-api.netlify.app/shows");
+        const data = await response.json();
         setShows(data);
         setFilteredShows(data);
-      })
-      .catch((error) => console.error("Error fetching shows:", error));
+      } catch (error) {
+        console.error("Error fetching shows:", error);
+      }
+    };
+    fetchData();
   }, []);
 
   const genreMap = {
@@ -45,6 +49,33 @@ const BrowsePage = () => {
     8: "News",
     9: "Kids and Family",
   };
+
+  useEffect(() => {
+    const fetchSeasonsCount = async () => {
+      try {
+        const showsWithSeasons = await Promise.all(
+          shows.map(async (show) => {
+            const response = await fetch(
+              `https://podcast-api.netlify.app/id/${show.id}`
+            );
+            const data = await response.json();
+            return {
+              ...show,
+              seasons: data.seasons.length,
+              selectedSeason: 1,
+            };
+          })
+        );
+        setFilteredShows(showsWithSeasons);
+      } catch (error) {
+        console.error("Error fetching season counts:", error);
+      }
+    };
+
+    if (shows.length > 0) {
+      fetchSeasonsCount();
+    }
+  }, [shows]);
 
   const handleSortChange = (sortBy) => {
     setSortBy(sortBy);
@@ -68,10 +99,19 @@ const BrowsePage = () => {
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value.toLowerCase());
-    const filtered = shows.filter((show) =>
-      show.title.toLowerCase().includes(event.target.value.toLowerCase())
-    );
-    setFilteredShows(filtered);
+  };
+
+  const filterShows = () => {
+    let filtered = shows;
+    if (searchTerm) {
+      filtered = filtered.filter((show) =>
+        show.title.toLowerCase().includes(searchTerm)
+      );
+    }
+    if (activeGenre !== null) {
+      filtered = filtered.filter((show) => show.genres.includes(activeGenre));
+    }
+    return filtered;
   };
 
   const addToFavorites = (show) => {
@@ -88,39 +128,10 @@ const BrowsePage = () => {
     }
   };
 
-  const filterByGenre = (genreId) => {
+  const handleGenreChange = (genreId) => {
     setActiveGenre(genreId);
-    if (genreId === null) {
-      setFilteredShows(shows);
-    } else {
-      const filtered = shows.filter((show) => show.genres.includes(genreId));
-      setFilteredShows(filtered);
-    }
   };
 
-  useEffect(() => {
-    const fetchSeasonsCount = async () => {
-      const showsWithSeasons = await Promise.all(
-        shows.map(async (show) => {
-          const response = await fetch(
-            `https://podcast-api.netlify.app/id/${show.id}`
-          );
-          const data = await response.json();
-          return {
-            ...show,
-            seasons: data.seasons.length, // Extract season count
-            selectedSeason: 1, // Initialize selectedSeason to 1
-          };
-        })
-      );
-      setShows(showsWithSeasons);
-      setFilteredShows(showsWithSeasons);
-    };
-
-    fetchSeasonsCount();
-  }, [shows]);
-
-  // Define a custom theme for Material-UI with Roboto font
   const theme = createTheme({
     typography: {
       fontFamily: "Roboto, sans-serif",
@@ -132,7 +143,7 @@ const BrowsePage = () => {
             "&:hover": {
               boxShadow: "0 0 10px rgba(0, 0, 255, 0.5)",
             },
-            margin: "0 5px", // Added margin for spacing
+            margin: "0 5px",
           },
         },
         variants: {
@@ -175,7 +186,7 @@ const BrowsePage = () => {
           <Select
             value={sortBy}
             onChange={(e) => handleSortChange(e.target.value)}
-            sx={{ color: "white" }} // Changing text color to white
+            sx={{ color: "white" }}
           >
             <MenuItem value="title">Sort by Title (A-Z)</MenuItem>
             <MenuItem value="-title">Sort by Title (Z-A)</MenuItem>
@@ -192,7 +203,7 @@ const BrowsePage = () => {
             <Button
               variant="text"
               color="primary"
-              onClick={() => filterByGenre(null)}
+              onClick={() => handleGenreChange(null)}
               className={activeGenre === null ? "active" : ""}
             >
               All
@@ -202,15 +213,15 @@ const BrowsePage = () => {
                 key={id}
                 variant="text"
                 color="primary"
-                onClick={() => filterByGenre(parseInt(id))}
+                onClick={() => handleGenreChange(parseInt(id))}
                 className={activeGenre === parseInt(id) ? "active" : ""}
-                sx={{ margin: "0 5px" }} // Adding spacing between buttons
+                sx={{ margin: "0 5px" }}
               >
                 <Typography variant="button">{name}</Typography>
               </Button>
             ))}
           </div>
-          {filteredShows.map((show) => (
+          {filterShows().map((show) => (
             <div key={show.id}>
               <img
                 src={show.image}
