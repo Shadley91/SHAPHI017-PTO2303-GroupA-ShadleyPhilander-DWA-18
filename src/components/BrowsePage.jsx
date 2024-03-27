@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import moment from "moment";
 import {
@@ -18,14 +18,11 @@ const BrowsePage = () => {
   const [sortBy, setSortBy] = useState("title");
   const [searchTerm, setSearchTerm] = useState("");
   const [activeGenre, setActiveGenre] = useState(null);
+
   const Navigate = useNavigate();
 
-  const handleBackButton = () => {
-    Navigate("/");
-  };
-
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchShows = async () => {
       try {
         const response = await fetch("https://podcast-api.netlify.app/shows");
         const data = await response.json();
@@ -35,22 +32,7 @@ const BrowsePage = () => {
         console.error("Error fetching shows:", error);
       }
     };
-    fetchData();
-  }, []);
 
-  const genreMap = {
-    1: "Personal Growth",
-    2: "True Crime and Investigative Journalism",
-    3: "History",
-    4: "Comedy",
-    5: "Entertainment",
-    6: "Business",
-    7: "Fiction",
-    8: "News",
-    9: "Kids and Family",
-  };
-
-  useEffect(() => {
     const fetchSeasonsCount = async () => {
       try {
         const showsWithSeasons = await Promise.all(
@@ -62,20 +44,38 @@ const BrowsePage = () => {
             return {
               ...show,
               seasons: data.seasons.length,
-              selectedSeason: 1,
             };
           })
         );
+        setShows(showsWithSeasons);
         setFilteredShows(showsWithSeasons);
       } catch (error) {
-        console.error("Error fetching season counts:", error);
+        console.error("Error fetching seasons count:", error);
       }
     };
 
-    if (shows.length > 0) {
-      fetchSeasonsCount();
-    }
+    fetchShows();
+    fetchSeasonsCount();
   }, [shows]);
+
+  const genreMap = useMemo(
+    () => ({
+      1: "Personal Growth",
+      2: "True Crime and Investigative Journalism",
+      3: "History",
+      4: "Comedy",
+      5: "Entertainment",
+      6: "Business",
+      7: "Fiction",
+      8: "News",
+      9: "Kids and Family",
+    }),
+    []
+  );
+
+  const handleBackButton = () => {
+    Navigate("/");
+  };
 
   const handleSortChange = (sortBy) => {
     setSortBy(sortBy);
@@ -101,18 +101,16 @@ const BrowsePage = () => {
     setSearchTerm(event.target.value.toLowerCase());
   };
 
-  const filterShows = () => {
-    let filtered = shows;
-    if (searchTerm) {
-      filtered = filtered.filter((show) =>
+  useEffect(() => {
+    const delaySearch = setTimeout(() => {
+      const filtered = shows.filter((show) =>
         show.title.toLowerCase().includes(searchTerm)
       );
-    }
-    if (activeGenre !== null) {
-      filtered = filtered.filter((show) => show.genres.includes(activeGenre));
-    }
-    return filtered;
-  };
+      setFilteredShows(filtered);
+    }, 300);
+
+    return () => clearTimeout(delaySearch);
+  }, [searchTerm, shows]);
 
   const addToFavorites = (show) => {
     const existingFavorites =
@@ -128,8 +126,14 @@ const BrowsePage = () => {
     }
   };
 
-  const handleGenreChange = (genreId) => {
+  const filterByGenre = (genreId) => {
     setActiveGenre(genreId);
+    if (genreId === null) {
+      setFilteredShows(shows);
+    } else {
+      const filtered = shows.filter((show) => show.genres.includes(genreId));
+      setFilteredShows(filtered);
+    }
   };
 
   const theme = createTheme({
@@ -203,7 +207,7 @@ const BrowsePage = () => {
             <Button
               variant="text"
               color="primary"
-              onClick={() => handleGenreChange(null)}
+              onClick={() => filterByGenre(null)}
               className={activeGenre === null ? "active" : ""}
             >
               All
@@ -213,15 +217,15 @@ const BrowsePage = () => {
                 key={id}
                 variant="text"
                 color="primary"
-                onClick={() => handleGenreChange(parseInt(id))}
+                onClick={() => filterByGenre(parseInt(id))}
                 className={activeGenre === parseInt(id) ? "active" : ""}
                 sx={{ margin: "0 5px" }}
               >
                 <Typography variant="button">{name}</Typography>
               </Button>
-            ))}
+            ))}{" "}
           </div>
-          {filterShows().map((show) => (
+          {filteredShows.map((show) => (
             <div key={show.id}>
               <img
                 src={show.image}
@@ -229,33 +233,6 @@ const BrowsePage = () => {
                 style={{ maxWidth: "200px" }}
               />
               <h2>{show.title}</h2>
-              {show.seasons > 1 && (
-                <div>
-                  <label htmlFor={`season-dropdown-${show.id}`}>
-                    Select Season:
-                  </label>
-                  <Select
-                    id={`season-dropdown-${show.id}`}
-                    value={show.selectedSeason || 1}
-                    onChange={(e) => {
-                      const selectedSeason = parseInt(e.target.value);
-                      const updatedShows = filteredShows.map((s) =>
-                        s.id === show.id ? { ...s, selectedSeason } : s
-                      );
-                      setFilteredShows(updatedShows);
-                    }}
-                  >
-                    {[...Array(show.seasons).keys()].map((season) => (
-                      <MenuItem key={season + 1} value={season + 1}>
-                        Season {season + 1}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  <span style={{ marginLeft: "8px" }}>
-                    Selected: Season {show.selectedSeason || 1}
-                  </span>
-                </div>
-              )}
               <p>Seasons: {show.seasons}</p>{" "}
               <p>Last Updated: {moment(show.lastUpdated).format("LL")}</p>
               <p>
