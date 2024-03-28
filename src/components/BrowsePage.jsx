@@ -19,6 +19,8 @@ const BrowsePage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeGenre, setActiveGenre] = useState(null);
   const [selectedSeasons, setSelectedSeasons] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showsPerPage] = useState(5); // Number of shows per page
 
   const Navigate = useNavigate();
 
@@ -170,6 +172,15 @@ const BrowsePage = () => {
     []
   );
 
+  // Logic for pagination
+  const indexOfLastShow = currentPage * showsPerPage;
+  const indexOfFirstShow = indexOfLastShow - showsPerPage;
+  const currentShows = filteredShows.slice(indexOfFirstShow, indexOfLastShow);
+
+  // Change page
+  const nextPage = () => setCurrentPage(currentPage + 1);
+  const prevPage = () => setCurrentPage(currentPage - 1);
+
   return (
     <ThemeProvider theme={theme}>
       <div>
@@ -222,7 +233,7 @@ const BrowsePage = () => {
               </Button>
             ))}
           </div>
-          {filteredShows.map((show) => (
+          {currentShows.map((show) => (
             <div key={show.id}>
               <img
                 src={show.image}
@@ -264,6 +275,25 @@ const BrowsePage = () => {
               </Button>
             </div>
           ))}
+        </div>
+        {/* Pagination */}
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <Button
+            onClick={prevPage}
+            disabled={currentPage === 1}
+            variant="outlined"
+            color="primary"
+          >
+            Previous
+          </Button>
+          <Button
+            onClick={nextPage}
+            disabled={currentShows.length < showsPerPage}
+            variant="outlined"
+            color="primary"
+          >
+            Next
+          </Button>
         </div>
       </div>
     </ThemeProvider>
