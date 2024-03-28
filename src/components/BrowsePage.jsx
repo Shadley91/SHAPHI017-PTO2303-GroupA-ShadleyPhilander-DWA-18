@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import moment from "moment";
 import {
@@ -18,19 +18,15 @@ const BrowsePage = () => {
   const [sortBy, setSortBy] = useState("title");
   const [searchTerm, setSearchTerm] = useState("");
   const [activeGenre, setActiveGenre] = useState(null);
+  const [selectedSeasons, setSelectedSeasons] = useState({});
 
   const Navigate = useNavigate();
 
-  // Fetch shows and their seasons count on component mount
   useEffect(() => {
     const fetchShows = async () => {
       try {
         const response = await fetch("https://podcast-api.netlify.app/shows");
         const data = await response.json();
-        // Set shows and filteredShows states with fetched data
-        setShows(data);
-        setFilteredShows(data);
-        // Fetch seasons count for each show
         const showsWithSeasons = await Promise.all(
           data.map(async (show) => {
             const seasonResponse = await fetch(
@@ -40,9 +36,14 @@ const BrowsePage = () => {
             return { ...show, seasons: seasonData.seasons.length };
           })
         );
-        // Update shows and filteredShows states with seasons count
         setShows(showsWithSeasons);
         setFilteredShows(showsWithSeasons);
+        // Initialize selectedSeasons state with default values for each show ID
+        const initialSelectedSeasons = {};
+        showsWithSeasons.forEach((show) => {
+          initialSelectedSeasons[show.id] = 1; // Defaulting to season 1
+        });
+        setSelectedSeasons(initialSelectedSeasons);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -73,7 +74,6 @@ const BrowsePage = () => {
   const handleSortChange = useCallback(
     (sortBy) => {
       setSortBy(sortBy);
-      // Use a stable sorting algorithm to avoid unnecessary re-renders
       const sortedShows = [...filteredShows].sort((a, b) => {
         if (sortBy === "title") {
           return a.title.localeCompare(b.title);
@@ -89,7 +89,6 @@ const BrowsePage = () => {
           );
         }
       });
-      // Update filteredShows state with sorted shows
       setFilteredShows(sortedShows);
     },
     [filteredShows]
@@ -99,7 +98,6 @@ const BrowsePage = () => {
     setSearchTerm(event.target.value.toLowerCase());
   }, []);
 
-  // Debounce search input to avoid frequent filtering
   useEffect(() => {
     const delaySearch = setTimeout(() => {
       const filtered = shows.filter((show) =>
@@ -111,25 +109,16 @@ const BrowsePage = () => {
     return () => clearTimeout(delaySearch);
   }, [searchTerm, shows]);
 
-  const addToFavorites = useCallback((show) => {
-    // Use localStorage batch updates to improve performance
-    const existingFavorites =
-      JSON.parse(localStorage.getItem("favorites")) || [];
-    const isAlreadyFavorite = existingFavorites.some(
-      (favorite) => favorite.id === show.id
-    );
-
-    if (!isAlreadyFavorite) {
-      const newFavorites = [...existingFavorites, show];
-      localStorage.setItem("favorites", JSON.stringify(newFavorites));
-      console.log("Favorites after adding:", newFavorites);
-    }
-  }, []);
+  const addToFavorites = useCallback(
+    (show) => {
+      Navigate("/favourites", { state: { show } });
+    },
+    [Navigate]
+  );
 
   const filterByGenre = useCallback(
     (genreId) => {
       setActiveGenre(genreId);
-      // Filter shows by genre and update filteredShows state
       if (genreId === null) {
         setFilteredShows(shows);
       } else {
@@ -140,7 +129,6 @@ const BrowsePage = () => {
     [shows]
   );
 
-  // Memoize theme to prevent unnecessary re-renders
   const theme = useMemo(
     () =>
       createTheme({
@@ -242,7 +230,26 @@ const BrowsePage = () => {
                 style={{ maxWidth: "200px" }}
               />
               <h2>{show.title}</h2>
-              <p> Seasons: {show.seasons}</p>{" "}
+              <p> Seasons: {show.seasons}</p>
+              <Select
+                value={selectedSeasons[show.id] || 1}
+                onChange={(e) => {
+                  const selectedSeason = parseInt(e.target.value);
+                  setSelectedSeasons({
+                    ...selectedSeasons,
+                    [show.id]: selectedSeason,
+                  });
+                  console.log(`Season changed to ${selectedSeason}`);
+                }}
+              >
+                {[...Array(show.seasons)].map((_, index) => (
+                  <MenuItem key={index + 1} value={index + 1}>
+                    Season {index + 1}
+                  </MenuItem>
+                ))}
+              </Select>
+              <p>Selected Season: {selectedSeasons[show.id] || 1}</p>{" "}
+              {/* Display selected season */}
               <p>Last Updated: {moment(show.lastUpdated).format("LL")}</p>
               <p>
                 Genres:{" "}
