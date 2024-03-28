@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { useLocation } from "react-router-dom";
 import IconButton from "@mui/material/IconButton";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -12,24 +11,17 @@ const FavouritesPage = () => {
   const [selectedShow, setSelectedShow] = useState(null);
   const location = useLocation();
 
+  useEffect(() => {
+    // Load favorites from local storage when the component mounts
+    const storedFavorites = JSON.parse(localStorage.getItem("favorites"));
+    if (storedFavorites) {
+      setFavourites(storedFavorites);
+    }
+  }, []);
+
   const handleFavouritesBackButton = () => {
     window.history.back();
   };
-
-  useEffect(() => {
-    const fetchFavourites = async () => {
-      try {
-        const response = await axios.get(
-          "https://podcast-api.netlify.app/favourites"
-        );
-        setFavourites(response.data);
-      } catch (error) {
-        console.error("Error fetching favourites:", error);
-      }
-    };
-
-    fetchFavourites();
-  }, []);
 
   useEffect(() => {
     if (location.state && location.state.show) {
@@ -46,6 +38,7 @@ const FavouritesPage = () => {
           ...favourites,
           {
             id: showToAdd.id,
+            title: showToAdd.title, // Add title here
             show: showToAdd.show,
             season: showToAdd.season,
             episode: showToAdd.episode,
@@ -60,46 +53,38 @@ const FavouritesPage = () => {
     setSelectedShow(null);
   };
 
-  const removeFavourite = async (id) => {
-    try {
-      await axios.delete(`https://podcast-api.netlify.app/favourites/${id}`);
-      setFavourites(favourites.filter((favourite) => favourite.id !== id));
-      // Update localStorage after removing the favorite
-      localStorage.setItem(
-        "favorites",
-        JSON.stringify(favourites.filter((favourite) => favourite.id !== id))
-      );
-      // Check if the selected show is being removed, if so, reset selectedShow to null
-      if (selectedShow && selectedShow.id === id) {
-        setSelectedShow(null);
-      }
-    } catch (error) {
-      console.error("Error removing favourite:", error);
-    }
+  const removeFavourite = (id) => {
+    const updatedFavourites = favourites.filter((fav) => fav.id !== id);
+    setFavourites(updatedFavourites);
+    localStorage.setItem("favorites", JSON.stringify(updatedFavourites));
   };
 
   const sortByShowAZ = () => {
-    setFavourites([...favourites.sort((a, b) => a.show.localeCompare(b.show))]);
+    const sortedFavourites = [...favourites].sort((a, b) =>
+      a.show.localeCompare(b.show)
+    );
+    setFavourites(sortedFavourites);
   };
 
   const sortByShowZA = () => {
-    setFavourites([...favourites.sort((a, b) => b.show.localeCompare(a.show))]);
+    const sortedFavourites = [...favourites].sort((a, b) =>
+      b.show.localeCompare(a.show)
+    );
+    setFavourites(sortedFavourites);
   };
 
   const sortByDateAsc = () => {
-    setFavourites([
-      ...favourites.sort(
-        (a, b) => new Date(a.dateTimeAdded) - new Date(b.dateTimeAdded)
-      ),
-    ]);
+    const sortedFavourites = [...favourites].sort(
+      (a, b) => new Date(a.dateTimeAdded) - new Date(b.dateTimeAdded)
+    );
+    setFavourites(sortedFavourites);
   };
 
   const sortByDateDesc = () => {
-    setFavourites([
-      ...favourites.sort(
-        (a, b) => new Date(b.dateTimeAdded) - new Date(a.dateTimeAdded)
-      ),
-    ]);
+    const sortedFavourites = [...favourites].sort(
+      (a, b) => new Date(b.dateTimeAdded) - new Date(a.dateTimeAdded)
+    );
+    setFavourites(sortedFavourites);
   };
 
   return (
@@ -153,8 +138,8 @@ const FavouritesPage = () => {
       {favourites.map((favourite) => (
         <div key={favourite.id}>
           <p>
-            {favourite.show} - Season {favourite.season}, Episode:{" "}
-            {favourite.episode}
+            {favourite.title} - {favourite.show} - Season {favourite.season},
+            Episode: {favourite.episode}
           </p>
           <img
             src={favourite.image}
@@ -165,7 +150,7 @@ const FavouritesPage = () => {
             Date and Time Added: {new Date(favourite.dateTimeAdded).toString()}
           </p>
           <IconButton
-            onClick={() => removeFavourite(favourite.id)} // Call removeFavourite function with the ID of the selected show
+            onClick={() => removeFavourite(favourite.id)}
             color="primary"
             aria-label="remove"
           >
