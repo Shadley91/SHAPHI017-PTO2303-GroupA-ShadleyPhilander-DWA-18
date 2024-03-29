@@ -328,4 +328,3 @@ const BrowsePage = () => {
 };
 
 export default BrowsePage; // Exporting BrowsePage component
-
