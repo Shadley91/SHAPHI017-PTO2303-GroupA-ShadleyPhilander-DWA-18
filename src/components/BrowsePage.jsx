@@ -19,6 +19,7 @@ const BrowsePage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeGenre, setActiveGenre] = useState(null);
   const [selectedSeasons, setSelectedSeasons] = useState({});
+  const [seasonEpisodes, setSeasonEpisodes] = useState({}); // New state to store episodes count
   const [currentPage, setCurrentPage] = useState(1);
   const [showsPerPage] = useState(5); // Number of shows per page
 
@@ -35,17 +36,20 @@ const BrowsePage = () => {
               `https://podcast-api.netlify.app/id/${show.id}`
             );
             const seasonData = await seasonResponse.json();
-            return { ...show, seasons: seasonData.seasons.length };
+            return { ...show, seasons: seasonData.seasons };
           })
         );
         setShows(showsWithSeasons);
         setFilteredShows(showsWithSeasons);
         // Initialize selectedSeasons state with default values for each show ID
         const initialSelectedSeasons = {};
+        const initialSeasonEpisodes = {};
         showsWithSeasons.forEach((show) => {
           initialSelectedSeasons[show.id] = 1; // Defaulting to season 1
+          initialSeasonEpisodes[show.id] = show.seasons[0].episodes.length; // Defaulting to season 1's episodes count
         });
         setSelectedSeasons(initialSelectedSeasons);
+        setSeasonEpisodes(initialSeasonEpisodes);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -241,7 +245,7 @@ const BrowsePage = () => {
                 style={{ maxWidth: "200px" }}
               />
               <h2>{show.title}</h2>
-              <p> Seasons: {show.seasons}</p>
+              <p> Seasons: {show.seasons.length}</p>
               <Select
                 value={selectedSeasons[show.id] || 1}
                 onChange={(e) => {
@@ -253,7 +257,7 @@ const BrowsePage = () => {
                   console.log(`Season changed to ${selectedSeason}`);
                 }}
               >
-                {[...Array(show.seasons)].map((_, index) => (
+                {show.seasons.map((season, index) => (
                   <MenuItem key={index + 1} value={index + 1}>
                     Season {index + 1}
                   </MenuItem>
@@ -261,6 +265,7 @@ const BrowsePage = () => {
               </Select>
               <p>Selected Season: {selectedSeasons[show.id] || 1}</p>{" "}
               {/* Display selected season */}
+              <p>Episodes in Selected Season: {seasonEpisodes[show.id]}</p>
               <p>Last Updated: {moment(show.lastUpdated).format("LL")}</p>
               <p>
                 Genres:{" "}
