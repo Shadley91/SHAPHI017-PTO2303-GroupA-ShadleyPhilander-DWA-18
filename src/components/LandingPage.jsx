@@ -2,13 +2,15 @@ import { useState, useEffect, useMemo } from "react";
 import Button from "@mui/material/Button";
 
 function LandingPage() {
-  const [shows, setShows] = useState([]);
-  const [selectedShow, setSelectedShow] = useState(null);
-  const [loadingInitialData, setLoadingInitialData] = useState(true);
-  const [loadingNewData, setLoadingNewData] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  // State variables to manage data and loading states
+  const [shows, setShows] = useState([]); // Stores fetched shows data
+  const [selectedShow, setSelectedShow] = useState(null); // Stores data of the selected show
+  const [loadingInitialData, setLoadingInitialData] = useState(true); // Indicates whether initial data is being loaded
+  const [loadingNewData, setLoadingNewData] = useState(false); // Indicates whether new data is being loaded
+  const [currentPage, setCurrentPage] = useState(1); // Tracks the current page for pagination
   const [perPage] = useState(5); // Number of items per page
 
+  // Mapping of genre IDs to genre names, memoized for optimization
   const genreMapping = useMemo(
     () => ({
       1: "Personal Growth",
@@ -24,6 +26,7 @@ function LandingPage() {
     []
   );
 
+  // Fetches initial shows data when component mounts or genre mapping changes
   useEffect(() => {
     fetch("https://podcast-api.netlify.app/shows")
       .then((response) => response.json())
@@ -42,6 +45,7 @@ function LandingPage() {
       .catch((error) => console.error("Error fetching shows:", error));
   }, [genreMapping]);
 
+  // Fetches detailed data of a selected show
   const fetchShowData = (showId) => {
     setLoadingNewData(true);
     fetch(`https://podcast-api.netlify.app/id/${showId}`)
@@ -68,17 +72,20 @@ function LandingPage() {
   const indexOfFirstShow = indexOfLastShow - perPage;
   const currentShows = shows.slice(indexOfFirstShow, indexOfLastShow);
 
-  // Change page
+  // Changes the current page for pagination
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+  // Renders loading message when initial data is being fetched
   if (loadingInitialData) {
     return <div>Loading initial data...</div>;
   }
 
+  // Renders the landing page with shows and pagination
   return (
     <div>
       <h1>All Shows</h1>
       <ul>
+        {/* Maps through current shows to render show previews */}
         {currentShows.map((show) => (
           <li key={show.id}>
             <div>
@@ -91,6 +98,7 @@ function LandingPage() {
                   alt={show.name}
                   style={{ maxWidth: "200px" }}
                 />
+                {/* Button to view detailed information of the show */}
                 <Button
                   variant="contained"
                   color="primary"
@@ -109,6 +117,7 @@ function LandingPage() {
       <div
         style={{ display: "flex", justifyContent: "center", margin: "20px 0" }}
       >
+        {/* Button for previous page */}
         <Button
           variant="contained"
           disabled={currentPage === 1}
@@ -117,6 +126,7 @@ function LandingPage() {
         >
           Previous
         </Button>
+        {/* Button for next page */}
         <Button
           variant="contained"
           disabled={indexOfLastShow >= shows.length}
@@ -126,8 +136,10 @@ function LandingPage() {
         </Button>
       </div>
 
+      {/* Renders loading message when new data is being fetched */}
       {loadingNewData && <div>Loading new data...</div>}
 
+      {/* Renders detailed information of the selected show */}
       {selectedShow && (
         <div>
           <h2>{selectedShow.name}</h2>
@@ -140,6 +152,7 @@ function LandingPage() {
           <p>Genres: {selectedShow.genres.join(", ")}</p>
           <h3>Seasons</h3>
           <ul>
+            {/* Lists seasons of the selected show */}
             {selectedShow.seasons.map((season, index) => (
               <li key={season.id}>
                 Season {index + 1}: {season.name}
@@ -148,6 +161,7 @@ function LandingPage() {
           </ul>
           <h3>Episodes</h3>
           <ul>
+            {/* Lists episodes of the selected show */}
             {selectedShow.episodes.map((episode) => (
               <li key={episode.id}>{episode.title}</li>
             ))}
