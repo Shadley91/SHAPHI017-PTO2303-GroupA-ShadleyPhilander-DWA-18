@@ -7,10 +7,14 @@ import Grid from "@mui/material/Grid";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 const FavouritesPage = () => {
+  // State hooks for managing favourites and selected show
   const [favourites, setFavourites] = useState([]);
   const [selectedShow, setSelectedShow] = useState(null);
+
+  // Hook to access the current location
   const location = useLocation();
 
+  // Effect hook to load favourites from local storage on component mount
   useEffect(() => {
     const storedFavorites = JSON.parse(localStorage.getItem("favorites"));
     if (storedFavorites) {
@@ -18,16 +22,19 @@ const FavouritesPage = () => {
     }
   }, []);
 
+  // Effect hook to update selected show based on location state changes
   useEffect(() => {
     if (location.state && location.state.show) {
       setSelectedShow(location.state.show);
     }
   }, [location.state]);
 
+  // Handler for navigating back in history
   const handleFavouritesBackButton = () => {
     window.history.back();
   };
 
+  // Function to add the selected show to favourites
   const addToFavourites = () => {
     if (selectedShow) {
       const showToAdd = selectedShow;
@@ -52,12 +59,14 @@ const FavouritesPage = () => {
     setSelectedShow(null);
   };
 
+  // Function to remove a favourite by ID
   const removeFavourite = (id) => {
     const updatedFavourites = favourites.filter((fav) => fav.id !== id);
     setFavourites(updatedFavourites);
     localStorage.setItem("favorites", JSON.stringify(updatedFavourites));
   };
 
+  // Functions for sorting favourites
   const sortFavouritesByTitleAZ = () => {
     const sortedFavourites = [...favourites].sort((a, b) =>
       a.title.toLowerCase().localeCompare(b.title.toLowerCase())
@@ -86,8 +95,10 @@ const FavouritesPage = () => {
     setFavourites(sortedFavourites);
   };
 
+  // JSX rendering
   return (
     <div>
+      {/* Back button */}
       <IconButton
         onClick={handleFavouritesBackButton}
         color="primary"
@@ -95,7 +106,9 @@ const FavouritesPage = () => {
       >
         <ArrowBackIcon />
       </IconButton>
+      {/* Page title */}
       <h1>Favourites</h1>
+      {/* Sorting buttons */}
       <Grid container spacing={2}>
         <Grid item>
           <Button
@@ -126,6 +139,7 @@ const FavouritesPage = () => {
           </Button>
         </Grid>
       </Grid>
+      {/* Selected show information and add to favourites button */}
       {selectedShow && (
         <div>
           <p>
@@ -142,6 +156,7 @@ const FavouritesPage = () => {
           </Button>
         </div>
       )}
+      {/* Displaying favourites or message if no favourites */}
       {favourites.length > 0 ? (
         favourites.map((favourite) => (
           <div key={favourite.id}>
@@ -158,6 +173,7 @@ const FavouritesPage = () => {
               Date and Time Added:{" "}
               {new Date(favourite.dateTimeAdded).toString()}
             </p>
+            {/* Button to remove favourite */}
             <IconButton
               onClick={() => removeFavourite(favourite.id)}
               color="primary"
