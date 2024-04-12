@@ -40,7 +40,8 @@ const BrowsePage = () => {
               `https://podcast-api.netlify.app/id/${show.id}`
             );
             const seasonData = await seasonResponse.json();
-            return { ...show, seasons: seasonData.seasons };
+            const lastUpdated = moment().toISOString(); // Current date and time
+            return { ...show, seasons: seasonData.seasons, lastUpdated };
           })
         );
         // Set fetched shows and filtered shows, initialize selected seasons and episodes count states
@@ -78,7 +79,7 @@ const BrowsePage = () => {
     []
   );
 
-  // Function to handle back button click
+  // Callback function to handle back button click
   const handleBackButton = () => {
     Navigate("/");
   };
@@ -102,6 +103,7 @@ const BrowsePage = () => {
             moment(b.lastUpdated).valueOf() - moment(a.lastUpdated).valueOf()
           );
         }
+        return 0; // Default to no change in case of unknown sortBy value
       });
       setFilteredShows(sortedShows);
     },
@@ -264,7 +266,7 @@ const BrowsePage = () => {
                 style={{ maxWidth: "200px" }}
               />
               <h2>{show.title}</h2>
-              <p> Seasons: {show.seasons.length}</p>
+              <p>Seasons: {show.seasons.length}</p>
               {/* Dropdown for selecting season */}
               <Select
                 value={selectedSeasons[show.id] || 1}
@@ -286,7 +288,7 @@ const BrowsePage = () => {
               <p>Selected Season: {selectedSeasons[show.id] || 1}</p>{" "}
               {/* Display selected season */}
               <p>Episodes in Selected Season: {seasonEpisodes[show.id]}</p>
-              <p>Last Updated: {moment(show.lastUpdated).format("LL")}</p>
+              <p>Last Updated: {moment(show.lastUpdated).format("LLL")}</p>
               {/* Display genres */}
               <p>
                 Genres:{" "}
