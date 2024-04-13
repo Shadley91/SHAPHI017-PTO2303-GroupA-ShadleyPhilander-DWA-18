@@ -13,6 +13,7 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 const BrowsePage = () => {
+  // State hooks to manage component state
   const [shows, setShows] = useState([]);
   const [filteredShows, setFilteredShows] = useState([]);
   const [sortBy, setSortBy] = useState("title");
@@ -23,8 +24,10 @@ const BrowsePage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showsPerPage] = useState(5);
 
+  // Router navigation hook
   const navigate = useNavigate();
 
+  // Fetch shows data and additional details on component mount
   useEffect(() => {
     const fetchShows = async () => {
       try {
@@ -42,6 +45,7 @@ const BrowsePage = () => {
           })
         );
 
+        // Set shows data and initialize states based on fetched data
         setShows(showsWithSeasons);
         setFilteredShows(showsWithSeasons);
 
@@ -63,6 +67,7 @@ const BrowsePage = () => {
     fetchShows();
   }, []);
 
+  // Memoized map of genre IDs to genre names
   const genreMap = useMemo(
     () => ({
       1: "Personal Growth",
@@ -78,10 +83,12 @@ const BrowsePage = () => {
     []
   );
 
+  // Event handler to navigate back
   const handleBackButton = () => {
     navigate("/");
   };
 
+  // Callback for handling sort change
   const handleSortChange = useCallback(
     (sortBy) => {
       setSortBy(sortBy);
@@ -106,10 +113,12 @@ const BrowsePage = () => {
     [filteredShows]
   );
 
+  // Callback for handling search input change
   const handleSearch = useCallback((event) => {
     setSearchTerm(event.target.value.toLowerCase());
   }, []);
 
+  // Filter shows based on search term
   useEffect(() => {
     const delaySearch = setTimeout(() => {
       const filtered = shows.filter((show) =>
@@ -121,6 +130,7 @@ const BrowsePage = () => {
     return () => clearTimeout(delaySearch);
   }, [searchTerm, shows]);
 
+  // Callback to add a show to favorites and navigate
   const addToFavorites = useCallback(
     (show) => {
       navigate("/favourites", { state: { show } });
@@ -128,6 +138,7 @@ const BrowsePage = () => {
     [navigate]
   );
 
+  // Callback to filter shows by genre
   const filterByGenre = useCallback(
     (genreId) => {
       setActiveGenre(genreId);
@@ -141,6 +152,7 @@ const BrowsePage = () => {
     [shows]
   );
 
+  // Callback to handle selected season change
   const handleSeasonChange = useCallback(
     (showId, selectedSeason) => {
       setSelectedSeasons({
@@ -159,6 +171,7 @@ const BrowsePage = () => {
     [selectedSeasons, seasonEpisodes, shows]
   );
 
+  // Memoized theme creation
   const theme = useMemo(
     () =>
       createTheme({
@@ -200,6 +213,7 @@ const BrowsePage = () => {
     []
   );
 
+  // Pagination logic
   const indexOfLastShow = currentPage * showsPerPage;
   const indexOfFirstShow = indexOfLastShow - showsPerPage;
   const currentShows = filteredShows.slice(indexOfFirstShow, indexOfLastShow);
@@ -207,6 +221,7 @@ const BrowsePage = () => {
   const nextPage = () => setCurrentPage(currentPage + 1);
   const prevPage = () => setCurrentPage(currentPage - 1);
 
+  // JSX returned by the component
   return (
     <ThemeProvider theme={theme}>
       <div>
