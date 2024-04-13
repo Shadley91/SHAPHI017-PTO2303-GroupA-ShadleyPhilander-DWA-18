@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import moment from "moment"; // Importing moment library for date handling
+import moment from "moment";
 import {
   Button,
   IconButton,
@@ -12,47 +12,47 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
-// BrowsePage component definition
 const BrowsePage = () => {
-  // States for managing various data
-  const [shows, setShows] = useState([]); // State for storing fetched shows data
-  const [filteredShows, setFilteredShows] = useState([]); // State for storing filtered shows data
-  const [sortBy, setSortBy] = useState("title"); // State for sorting criteria
-  const [searchTerm, setSearchTerm] = useState(""); // State for search term input
-  const [activeGenre, setActiveGenre] = useState(null); // State for active genre filter
-  const [selectedSeasons, setSelectedSeasons] = useState({}); // State for selected seasons per show
-  const [seasonEpisodes, setSeasonEpisodes] = useState({}); // State for episodes count per selected season
-  const [currentPage, setCurrentPage] = useState(1); // State for current page of pagination
-  const [showsPerPage] = useState(5); // State for number of shows per page
+  const [shows, setShows] = useState([]);
+  const [filteredShows, setFilteredShows] = useState([]);
+  const [sortBy, setSortBy] = useState("title");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeGenre, setActiveGenre] = useState(null);
+  const [selectedSeasons, setSelectedSeasons] = useState({});
+  const [seasonEpisodes, setSeasonEpisodes] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showsPerPage] = useState(5);
 
-  const Navigate = useNavigate(); // Navigation hook for redirecting between pages
+  const navigate = useNavigate();
 
-  // Effect to fetch shows data from the API on component mount
   useEffect(() => {
     const fetchShows = async () => {
       try {
         const response = await fetch("https://podcast-api.netlify.app/shows");
         const data = await response.json();
-        // Fetch seasons data for each show
+
         const showsWithSeasons = await Promise.all(
           data.map(async (show) => {
             const seasonResponse = await fetch(
               `https://podcast-api.netlify.app/id/${show.id}`
             );
             const seasonData = await seasonResponse.json();
-            const lastUpdated = moment().toISOString(); // Current date and time
+            const lastUpdated = moment().toISOString();
             return { ...show, seasons: seasonData.seasons, lastUpdated };
           })
         );
-        // Set fetched shows and filtered shows, initialize selected seasons and episodes count states
+
         setShows(showsWithSeasons);
         setFilteredShows(showsWithSeasons);
+
         const initialSelectedSeasons = {};
         const initialSeasonEpisodes = {};
+
         showsWithSeasons.forEach((show) => {
-          initialSelectedSeasons[show.id] = 1; // Defaulting to season 1
-          initialSeasonEpisodes[show.id] = show.seasons[0].episodes.length; // Defaulting to season 1's episodes count
+          initialSelectedSeasons[show.id] = 1;
+          initialSeasonEpisodes[show.id] = show.seasons[0].episodes.length;
         });
+
         setSelectedSeasons(initialSelectedSeasons);
         setSeasonEpisodes(initialSeasonEpisodes);
       } catch (error) {
@@ -63,7 +63,6 @@ const BrowsePage = () => {
     fetchShows();
   }, []);
 
-  // Memoized genre map for efficient rendering
   const genreMap = useMemo(
     () => ({
       1: "Personal Growth",
@@ -79,16 +78,13 @@ const BrowsePage = () => {
     []
   );
 
-  // Callback function to handle back button click
   const handleBackButton = () => {
-    Navigate("/");
+    navigate("/");
   };
 
-  // Callback function to handle sort criteria change
   const handleSortChange = useCallback(
     (sortBy) => {
       setSortBy(sortBy);
-      // Sort filtered shows based on selected criteria
       const sortedShows = [...filteredShows].sort((a, b) => {
         if (sortBy === "title") {
           return a.title.localeCompare(b.title);
@@ -103,19 +99,17 @@ const BrowsePage = () => {
             moment(b.lastUpdated).valueOf() - moment(a.lastUpdated).valueOf()
           );
         }
-        return 0; // Default to no change in case of unknown sortBy value
+        return 0;
       });
       setFilteredShows(sortedShows);
     },
     [filteredShows]
   );
 
-  // Callback function to handle search input change
   const handleSearch = useCallback((event) => {
     setSearchTerm(event.target.value.toLowerCase());
   }, []);
 
-  // Effect to filter shows based on search term
   useEffect(() => {
     const delaySearch = setTimeout(() => {
       const filtered = shows.filter((show) =>
@@ -127,15 +121,13 @@ const BrowsePage = () => {
     return () => clearTimeout(delaySearch);
   }, [searchTerm, shows]);
 
-  // Callback function to add show to favorites and navigate to favorites page
   const addToFavorites = useCallback(
     (show) => {
-      Navigate("/favourites", { state: { show } });
+      navigate("/favourites", { state: { show } });
     },
-    [Navigate]
+    [navigate]
   );
 
-  // Callback function to filter shows by genre
   const filterByGenre = useCallback(
     (genreId) => {
       setActiveGenre(genreId);
@@ -149,7 +141,24 @@ const BrowsePage = () => {
     [shows]
   );
 
-  // Memoized theme object for styling MUI components
+  const handleSeasonChange = useCallback(
+    (showId, selectedSeason) => {
+      setSelectedSeasons({
+        ...selectedSeasons,
+        [showId]: selectedSeason,
+      });
+
+      const selectedShow = shows.find((show) => show.id === showId);
+      const episodesCount =
+        selectedShow.seasons[selectedSeason - 1].episodes.length;
+      setSeasonEpisodes({
+        ...seasonEpisodes,
+        [showId]: episodesCount,
+      });
+    },
+    [selectedSeasons, seasonEpisodes, shows]
+  );
+
   const theme = useMemo(
     () =>
       createTheme({
@@ -191,27 +200,21 @@ const BrowsePage = () => {
     []
   );
 
-  // Logic for pagination
   const indexOfLastShow = currentPage * showsPerPage;
   const indexOfFirstShow = indexOfLastShow - showsPerPage;
   const currentShows = filteredShows.slice(indexOfFirstShow, indexOfLastShow);
 
-  // Function to move to next page
   const nextPage = () => setCurrentPage(currentPage + 1);
-  // Function to move to previous page
   const prevPage = () => setCurrentPage(currentPage - 1);
 
-  // JSX structure for BrowsePage component
   return (
     <ThemeProvider theme={theme}>
       <div>
-        {/* Back button */}
         <IconButton onClick={handleBackButton} aria-label="back">
           <ArrowBackIcon />
         </IconButton>
         <h1>Browse Shows</h1>
         <div>
-          {/* Search input and sort select */}
           <input
             type="text"
             placeholder="Search by title"
@@ -234,7 +237,6 @@ const BrowsePage = () => {
           </Select>
         </div>
         <div>
-          {/* Genre filters */}
           <div>
             <Button
               variant="text"
@@ -257,27 +259,20 @@ const BrowsePage = () => {
               </Button>
             ))}
           </div>
-          {/* Display shows */}
           {currentShows.map((show) => (
             <div key={show.id}>
               <img
                 src={show.image}
-                alt={show.name}
+                alt={show.title}
                 style={{ maxWidth: "200px" }}
               />
               <h2>{show.title}</h2>
               <p>Seasons: {show.seasons.length}</p>
-              {/* Dropdown for selecting season */}
               <Select
                 value={selectedSeasons[show.id] || 1}
-                onChange={(e) => {
-                  const selectedSeason = parseInt(e.target.value);
-                  setSelectedSeasons({
-                    ...selectedSeasons,
-                    [show.id]: selectedSeason,
-                  });
-                  console.log(`Season changed to ${selectedSeason}`);
-                }}
+                onChange={(e) =>
+                  handleSeasonChange(show.id, parseInt(e.target.value))
+                }
               >
                 {show.seasons.map((season, index) => (
                   <MenuItem key={index + 1} value={index + 1}>
@@ -285,16 +280,22 @@ const BrowsePage = () => {
                   </MenuItem>
                 ))}
               </Select>
-              <p>Selected Season: {selectedSeasons[show.id] || 1}</p>{" "}
-              {/* Display selected season */}
+              <p>Selected Season: {selectedSeasons[show.id] || 1}</p>
               <p>Episodes in Selected Season: {seasonEpisodes[show.id]}</p>
+              <ul>
+                {show.seasons[selectedSeasons[show.id] - 1].episodes.map(
+                  (episode, index) => (
+                    <li key={index}>
+                      Episode {index + 1}: {episode.title}
+                    </li>
+                  )
+                )}
+              </ul>
               <p>Last Updated: {moment(show.lastUpdated).format("LLL")}</p>
-              {/* Display genres */}
               <p>
                 Genres:{" "}
                 {show.genres.map((genreId) => genreMap[genreId]).join(", ")}
               </p>
-              {/* Button to add show to favorites */}
               <Button
                 variant="outlined"
                 color="primary"
@@ -305,7 +306,6 @@ const BrowsePage = () => {
             </div>
           ))}
         </div>
-        {/* Pagination */}
         <div style={{ display: "flex", justifyContent: "center" }}>
           <Button
             onClick={prevPage}
@@ -329,4 +329,4 @@ const BrowsePage = () => {
   );
 };
 
-export default BrowsePage; // Exporting BrowsePage component
+export default BrowsePage;
